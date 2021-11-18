@@ -930,15 +930,30 @@ module Searchkick
                 }
               when :geo_shape
                 shape = op_value.except(:relation)
-                shape[:coordinates] = coordinate_array(shape[:coordinates]) if shape[:coordinates]
-                filters << {
-                  geo_shape: {
-                    field => {
-                      relation: op_value[:relation] || "intersects",
-                      shape: shape
+                if shape[:indexed_shape].present?
+                  filters << {
+                    geo_shape: {
+                      field => {
+                        indexed_shape: {
+                          index: shape[:indexed_shape][:index],
+                          id: shape[:indexed_shape][:id],
+                          path: shape[:indexed_shape][:path]
+                        }
+
+                      }
                     }
                   }
-                }
+                else
+                  shape[:coordinates] = coordinate_array(shape[:coordinates]) if shape[:coordinates]
+                  filters << {
+                    geo_shape: {
+                      field => {
+                        relation: op_value[:relation] || 'intersects',
+                        shape: shape
+                      }
+                    }
+                  }
+                end
               when :top_left
                 filters << {
                   geo_bounding_box: {
